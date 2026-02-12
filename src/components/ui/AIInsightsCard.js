@@ -47,9 +47,11 @@ export default function AIInsightsCard({ dashboardData }) {
 
     // Load cached insights on mount
     useEffect(() => {
-        const cached = localStorage.getItem('ai_insights');
-        if (cached) {
-            try {
+        if (typeof window === 'undefined') return;
+
+        try {
+            const cached = localStorage.getItem('ai_insights');
+            if (cached) {
                 const { data, date } = JSON.parse(cached);
                 // Check if less than 24 hours old
                 const isFresh = (new Date() - new Date(date)) < 24 * 60 * 60 * 1000;
@@ -57,9 +59,11 @@ export default function AIInsightsCard({ dashboardData }) {
                     setInsights(data);
                     setGeneratedAt(date);
                 }
-            } catch (e) {
-                console.error('Error parsing cached insights', e);
             }
+        } catch (e) {
+            console.error('Error parsing cached insights', e);
+            // Clear invalid cache
+            localStorage.removeItem('ai_insights');
         }
     }, []);
 
