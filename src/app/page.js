@@ -10,12 +10,10 @@ import {
     AlertTriangle,
     UserPlus,
     TrendingUp,
-    ArrowUpRight,
-    ArrowDownRight,
 } from 'lucide-react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, Area, AreaChart,
+    BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    Area, AreaChart,
 } from 'recharts';
 
 export default function DashboardPage() {
