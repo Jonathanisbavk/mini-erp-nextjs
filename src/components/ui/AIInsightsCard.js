@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, TrendingUp, Package, AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
 
 const INSIGHT_CARDS = [
