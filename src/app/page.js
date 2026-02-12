@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import { LoadingSpinner } from '@/components/ui/SharedComponents';
+import AIInsightsCard from '@/components/ui/AIInsightsCard';
 import { formatCurrency } from '@/lib/utils';
 import {
     DollarSign,
@@ -205,22 +206,27 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Summary Card */}
-                    <div className="glass-card p-6">
-                        <h3 className="section-title mb-4">Resumen Financiero</h3>
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                                <p className="text-xs text-green-400 font-semibold uppercase mb-1">Ingresos del Mes</p>
-                                <p className="text-xl font-bold text-green-400">{formatCurrency(kpis.monthlyRevenue)}</p>
-                            </div>
-                            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                <p className="text-xs text-amber-400 font-semibold uppercase mb-1">Saldo Pendiente</p>
-                                <p className="text-xl font-bold text-amber-400">{formatCurrency(kpis.pendingBalance)}</p>
-                            </div>
-                            <div className="p-4 rounded-xl bg-primary-500/10 border border-primary-500/20">
-                                <p className="text-xs text-primary-400 font-semibold uppercase mb-1">Órdenes Hoy</p>
-                                <p className="text-xl font-bold text-primary-400">{kpis.todayOrders}</p>
+                    <div className="space-y-6">
+                        <div className="glass-card p-6">
+                            <h3 className="section-title mb-4">Resumen Financiero</h3>
+                            <div className="space-y-4">
+                                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                                    <p className="text-xs text-green-400 font-semibold uppercase mb-1">Ingresos del Mes</p>
+                                    <p className="text-xl font-bold text-green-400">{formatCurrency(kpis.monthlyRevenue)}</p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                                    <p className="text-xs text-amber-400 font-semibold uppercase mb-1">Saldo Pendiente</p>
+                                    <p className="text-xl font-bold text-amber-400">{formatCurrency(kpis.pendingBalance)}</p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-primary-500/10 border border-primary-500/20">
+                                    <p className="text-xs text-primary-400 font-semibold uppercase mb-1">Órdenes Hoy</p>
+                                    <p className="text-xl font-bold text-primary-400">{kpis.todayOrders}</p>
+                                </div>
                             </div>
                         </div>
+
+                        {/* AI Business Insights */}
+                        <AIInsightsCard dashboardData={data} />
                     </div>
                 </div>
             </div>
