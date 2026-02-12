@@ -42,6 +42,7 @@ module.exports = {
                 'slide-up': 'slideUp 0.3s ease-out',
                 'slide-in-right': 'slideInRight 0.3s ease-out',
                 'pulse-soft': 'pulseSoft 2s infinite',
+                'stock-flash': 'stockFlash 1.5s ease-out',
             },
             keyframes: {
                 fadeIn: {
@@ -59,6 +60,10 @@ module.exports = {
                 pulseSoft: {
                     '0%, 100%': { opacity: '1' },
                     '50%': { opacity: '0.7' },
+                },
+                stockFlash: {
+                    '0%': { backgroundColor: 'rgba(234, 179, 8, 0.25)' },
+                    '100%': { backgroundColor: 'transparent' },
                 },
             },
         },

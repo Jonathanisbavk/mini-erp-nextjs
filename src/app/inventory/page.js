@@ -5,7 +5,8 @@ import Header from '@/components/layout/Header';
 import { Modal, DataTable, LoadingSpinner, EmptyState, StatusBadge } from '@/components/ui/SharedComponents';
 import { formatCurrency, getStockStatus, calcMargin } from '@/lib/utils';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
-import { Package, Plus, Search, AlertTriangle, Filter } from 'lucide-react';
+import { useRealtimeProducts } from '@/hooks/useRealtimeProducts';
+import { Package, Plus, Search, AlertTriangle, Filter, Wifi } from 'lucide-react';
 
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
@@ -15,6 +16,9 @@ export default function InventoryPage() {
     const [showLowStock, setShowLowStock] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+
+    // Supabase Realtime subscription
+    const { subscribe, changedIds, clearChanged } = useRealtimeProducts(products, setProducts);
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -32,6 +36,9 @@ export default function InventoryPage() {
     };
 
     useEffect(() => { fetchProducts(); }, [search, categoryFilter, showLowStock]);
+
+    // Start realtime subscription after first load
+    useEffect(() => { subscribe(); }, [subscribe]);
 
     const handleSave = async (formData) => {
         const url = editingProduct ? `/api/products/${editingProduct.id}` : '/api/products';
@@ -76,10 +83,18 @@ export default function InventoryPage() {
             label: 'Stock',
             render: (row) => {
                 const status = getStockStatus(row.stock, row.reorder_point);
+                const isChanged = changedIds.has(row.id);
                 return (
-                    <div className="flex items-center gap-2">
+                    <div
+                        className={`flex items-center gap-2 px-2 py-1 -mx-2 -my-1 rounded-lg ${isChanged ? 'animate-stock-flash' : ''
+                            }`}
+                        onAnimationEnd={() => clearChanged(row.id)}
+                    >
                         <span className="font-semibold text-surface-200">{row.stock}</span>
                         <StatusBadge color={status.color}>{status.label}</StatusBadge>
+                        {isChanged && (
+                            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse-soft" title="Actualizado en vivo" />
+                        )}
                     </div>
                 );
             },
@@ -121,6 +136,15 @@ export default function InventoryPage() {
     return (
         <div>
             <Header title="Inventario" subtitle="Control de stock y productos" />
+
+            {/* Realtime indicator */}
+            <div className="px-6 pt-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-xs text-green-400">
+                    <Wifi className="w-3 h-3" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-soft" />
+                    Sincronización en vivo
+                </div>
+            </div>
 
             <div className="p-6">
                 {/* Alert banner for low stock */}
