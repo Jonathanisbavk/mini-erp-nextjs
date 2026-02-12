@@ -10,6 +10,7 @@ import {
     ShoppingCart, Search, Plus, Minus, Trash2, CreditCard,
     User, AlertCircle, CheckCircle, X
 } from 'lucide-react';
+import WhatsAppButton from '@/components/ui/WhatsAppButton';
 
 export default function NewInvoicePage() {
     const router = useRouter();
@@ -19,6 +20,7 @@ export default function NewInvoicePage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    const [lastInvoice, setLastInvoice] = useState(null);
 
     // Form state
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -153,10 +155,14 @@ export default function NewInvoicePage() {
                 return;
             }
 
+            setLastInvoice({
+                id: data.invoice_id,
+                invoiceNumber: data.invoice_number || `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-???`,
+                total,
+                customerName: selectedCustomer.name,
+                customerPhone: selectedCustomer.phone,
+            });
             setSuccess(`Factura creada exitosamente`);
-            setTimeout(() => {
-                router.push(`/invoices/${data.invoice_id}`);
-            }, 1500);
         } catch (err) {
             setError('Error de conexión. Intente de nuevo.');
             setSubmitting(false);
@@ -191,9 +197,30 @@ export default function NewInvoicePage() {
                 </div>
             )}
             {success && (
-                <div className="mx-6 mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-3 animate-slide-up">
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                    <p className="text-sm text-green-300">{success}</p>
+                <div className="mx-6 mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 animate-slide-up">
+                    <div className="flex items-center gap-3 mb-3">
+                        <CheckCircle className="w-5 h-5 text-green-400" />
+                        <p className="text-sm text-green-300 font-medium">{success}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {lastInvoice && (
+                            <WhatsAppButton
+                                phone={lastInvoice.customerPhone}
+                                clientName={lastInvoice.customerName}
+                                total={lastInvoice.total}
+                                invoiceNumber={lastInvoice.invoiceNumber}
+                                size="sm"
+                            />
+                        )}
+                        {lastInvoice && (
+                            <button
+                                onClick={() => router.push(`/invoices/${lastInvoice.id}`)}
+                                className="btn-secondary text-xs"
+                            >
+                                Ver Factura
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -266,10 +293,10 @@ export default function NewInvoicePage() {
                                         onClick={() => addToCart(product)}
                                         disabled={product.stock <= 0}
                                         className={`text-left p-3 rounded-xl border transition-all duration-200 ${inCart
-                                                ? 'bg-primary-500/10 border-primary-500/30'
-                                                : product.stock <= 0
-                                                    ? 'bg-surface-800/30 border-surface-700/30 opacity-50 cursor-not-allowed'
-                                                    : 'bg-surface-800/50 border-surface-700/30 hover:border-surface-600 hover:bg-surface-800'
+                                            ? 'bg-primary-500/10 border-primary-500/30'
+                                            : product.stock <= 0
+                                                ? 'bg-surface-800/30 border-surface-700/30 opacity-50 cursor-not-allowed'
+                                                : 'bg-surface-800/50 border-surface-700/30 hover:border-surface-600 hover:bg-surface-800'
                                             }`}
                                     >
                                         <p className="text-sm font-medium text-surface-200 truncate">{product.name}</p>
@@ -361,8 +388,8 @@ export default function NewInvoicePage() {
                                         key={pm.value}
                                         onClick={() => setPaymentMethod(pm.value)}
                                         className={`py-2 px-3 rounded-xl text-xs font-medium transition-all ${paymentMethod === pm.value
-                                                ? 'bg-primary-500/20 border border-primary-500/40 text-primary-400'
-                                                : 'bg-surface-800 border border-surface-700 text-surface-400 hover:border-surface-600'
+                                            ? 'bg-primary-500/20 border border-primary-500/40 text-primary-400'
+                                            : 'bg-surface-800 border border-surface-700 text-surface-400 hover:border-surface-600'
                                             }`}
                                     >
                                         {pm.label}

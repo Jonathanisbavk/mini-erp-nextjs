@@ -91,3 +91,56 @@ export function calcMargin(cost, price) {
     if (!price || price === 0) return 0;
     return ((price - cost) / price) * 100;
 }
+
+/**
+ * Sanitize a phone number: remove spaces, dashes, parentheses, dots, and the leading '+'.
+ * If the resulting number has ≤10 digits (no country code), prepend the default code.
+ * @param {string} phone - Raw phone number
+ * @param {string} defaultCode - Country code without '+' (default: '51' for Peru)
+ * @returns {string} Cleaned phone number ready for wa.me
+ */
+export function sanitizePhone(phone, defaultCode = '51') {
+    if (!phone) return '';
+    // Strip all non-digit characters
+    let cleaned = phone.replace(/[^0-9]/g, '');
+    // If 10 digits or fewer, assume local — prepend country code
+    if (cleaned.length <= 10) {
+        cleaned = defaultCode + cleaned;
+    }
+    return cleaned;
+}
+
+/**
+ * Generate a WhatsApp `wa.me` link with a pre-filled professional message.
+ * @param {object} params
+ * @param {string} params.phone         - Client phone (will be sanitized)
+ * @param {string} params.clientName    - Client display name
+ * @param {number} params.total         - Invoice total amount
+ * @param {string} params.invoiceNumber - e.g. "INV-20260211-001"
+ * @param {string} [params.companyName] - Business name (default from constants)
+ * @param {string} [params.countryCode] - Fallback country code (default '51')
+ * @returns {string} Full wa.me URL or empty string if phone missing
+ */
+export function generateWhatsAppLink({
+    phone,
+    clientName,
+    total,
+    invoiceNumber,
+    companyName = 'Mini ERP',
+    countryCode = '51',
+}) {
+    const cleanPhone = sanitizePhone(phone, countryCode);
+    if (!cleanPhone) return '';
+
+    const formattedTotal = formatCurrency(total);
+
+    const message =
+        `¡Hola ${clientName}! 👋\n\n` +
+        `Gracias por tu compra en *${companyName}*.\n` +
+        `📄 Aquí tienes tu comprobante:\n\n` +
+        `🧾 *Factura:* ${invoiceNumber}\n` +
+        `💰 *Total:* ${formattedTotal}\n\n` +
+        `Si tienes alguna pregunta, no dudes en escribirnos. ¡Gracias por tu preferencia! 🙌`;
+
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+}

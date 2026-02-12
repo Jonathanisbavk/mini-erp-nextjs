@@ -66,10 +66,20 @@ export async function POST(request) {
         // Determine appropriate HTTP status from error message
         const isStockError = error.message.includes('Stock insuficiente');
         const isNotFound = error.message.includes('no encontrado');
-        const status = isStockError ? 409 : isNotFound ? 404 : 500;
+        const httpStatus = isStockError ? 409 : isNotFound ? 404 : 500;
 
-        return Response.json({ error: error.message }, { status });
+        return Response.json({ error: error.message }, { status: httpStatus });
     }
 
-    return Response.json({ invoice_id: data }, { status: 201 });
+    // Fetch the created invoice to get invoice_number for the client
+    const { data: invoice } = await supabase
+        .from('invoices')
+        .select('invoice_number')
+        .eq('id', data)
+        .single();
+
+    return Response.json({
+        invoice_id: data,
+        invoice_number: invoice?.invoice_number || null,
+    }, { status: 201 });
 }

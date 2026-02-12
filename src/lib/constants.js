@@ -1,3 +1,6 @@
+export const COMPANY_NAME = 'Mini ERP';
+export const DEFAULT_COUNTRY_CODE = '51'; // Peru
+
 export const TAX_RATE = 0.16;
 
 export const PAYMENT_METHODS = [

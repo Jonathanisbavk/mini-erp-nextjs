@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import { LoadingSpinner, StatusBadge } from '@/components/ui/SharedComponents';
 import { formatCurrency, formatDate, getInvoiceStatus, getPaymentMethodLabel } from '@/lib/utils';
 import { ArrowLeft, Printer, FileText, User, Package, DollarSign } from 'lucide-react';
+import WhatsAppButton from '@/components/ui/WhatsAppButton';
 
 export default function InvoiceDetailPage() {
     const { id } = useParams();
@@ -37,6 +38,13 @@ export default function InvoiceDetailPage() {
                         <ArrowLeft className="w-4 h-4" /> Volver a Facturas
                     </button>
                     <div className="flex items-center gap-2">
+                        <WhatsAppButton
+                            phone={invoice.customers?.phone}
+                            clientName={invoice.customers?.name || 'Cliente'}
+                            total={invoice.total}
+                            invoiceNumber={invoice.invoice_number}
+                            size="sm"
+                        />
                         <button onClick={() => window.print()} className="btn-secondary text-sm">
                             <Printer className="w-4 h-4" /> Imprimir
                         </button>
