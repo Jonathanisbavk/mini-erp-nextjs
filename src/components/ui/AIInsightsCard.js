@@ -45,7 +45,25 @@ export default function AIInsightsCard({ dashboardData }) {
     const [error, setError] = useState(null);
     const [generatedAt, setGeneratedAt] = useState(null);
 
-    const handleAnalyze = async () => {
+    // Load cached insights on mount
+    useEffect(() => {
+        const cached = localStorage.getItem('ai_insights');
+        if (cached) {
+            try {
+                const { data, date } = JSON.parse(cached);
+                // Check if less than 24 hours old
+                const isFresh = (new Date() - new Date(date)) < 24 * 60 * 60 * 1000;
+                if (isFresh) {
+                    setInsights(data);
+                    setGeneratedAt(date);
+                }
+            } catch (e) {
+                console.error('Error parsing cached insights', e);
+            }
+        }
+    }, []);
+
+    const handleAnalyze = async (forceRefresh = false) => {
         setLoading(true);
         setError(null);
 
@@ -74,6 +92,12 @@ export default function AIInsightsCard({ dashboardData }) {
 
             setInsights(data.insights);
             setGeneratedAt(data.generatedAt);
+
+            // Save to cache
+            localStorage.setItem('ai_insights', JSON.stringify({
+                data: data.insights,
+                date: data.generatedAt
+            }));
         } catch (err) {
             setError(err.message);
         } finally {
@@ -96,7 +120,7 @@ export default function AIInsightsCard({ dashboardData }) {
                         Analiza tus ventas e inventario con inteligencia artificial para obtener recomendaciones estratégicas
                     </p>
                     <button
-                        onClick={handleAnalyze}
+                        onClick={() => handleAnalyze(true)}
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl
                                    bg-gradient-to-r from-violet-500 to-purple-600
                                    hover:from-violet-400 hover:to-purple-500
@@ -152,7 +176,7 @@ export default function AIInsightsCard({ dashboardData }) {
                     </div>
                     <p className="text-sm text-red-300 mb-4">{error}</p>
                     <button
-                        onClick={handleAnalyze}
+                        onClick={() => handleAnalyze(true)}
                         className="btn-secondary text-sm"
                     >
                         <RefreshCw className="w-4 h-4" /> Reintentar
@@ -181,7 +205,7 @@ export default function AIInsightsCard({ dashboardData }) {
                     </div>
                 </div>
                 <button
-                    onClick={handleAnalyze}
+                    onClick={() => handleAnalyze(true)}
                     className="p-2 rounded-lg hover:bg-surface-700/50 transition-colors text-surface-400 hover:text-surface-200"
                     title="Regenerar análisis"
                 >
