@@ -187,22 +187,18 @@
     print-color-adjust: exact;
   }
 
-  /* Hide EVERYTHING except the receipt */
-  body>* {
-    display: none !important;
+  /* Hide ALL content using visibility (allows children to override) */
+  body * {
+    visibility: hidden !important;
   }
 
-  /* Show the receipt */
-  .print-only {
-    display: block !important;
+  /* Show ONLY the receipt and its children */
+  .thermal-receipt,
+  .thermal-receipt * {
+    visibility: visible !important;
   }
 
-  /* Hide elements marked no-print */
-  .no-print {
-    display: none !important;
-  }
-
-  /* Ensure receipt is positioned at top-left */
+  /* Position receipt at top-left, covering everything */
   .thermal-receipt {
     display: block !important;
     position: fixed !important;
@@ -217,6 +213,11 @@
     color: black !important;
     font-size: 12px !important;
     z-index: 99999 !important;
+  }
+
+  /* Also force-hide elements that might cause layout issues */
+  .no-print {
+    display: none !important;
   }
 }
 
