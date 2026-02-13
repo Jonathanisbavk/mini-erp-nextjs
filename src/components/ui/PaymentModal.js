@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CheckCircle, Loader2, Smartphone, CreditCard, Banknote, QrCode } from 'lucide-react';
+import { X, CheckCircle, Loader2, Smartphone, CreditCard, Banknote, QrCode, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { PAYMENT_METHODS } from '@/lib/constants';
+import CreditIndicator from '@/components/ui/CreditIndicator';
 
 /**
  * PaymentModal — Modal de cobro con soporte para Yape/Plin/Efectivo/Tarjeta.
@@ -14,13 +15,21 @@ import { PAYMENT_METHODS } from '@/lib/constants';
  * @param {function} onConfirm   — Callback al confirmar pago: ({ paymentMethod, transactionId, notes })
  * @param {boolean}  submitting  — Estado de envío
  */
-export default function PaymentModal({ isOpen, onClose, total, onConfirm, submitting }) {
+export default function PaymentModal({ isOpen, onClose, total, onConfirm, submitting, customer }) {
     const [selectedMethod, setSelectedMethod] = useState('cash');
     const [transactionId, setTransactionId] = useState('');
     const [cashReceived, setCashReceived] = useState('');
+    const [isFiado, setIsFiado] = useState(false);
     const [error, setError] = useState('');
 
     if (!isOpen) return null;
+
+    // Credit validation
+    const customerDebt = customer?.balance || 0;
+    const creditLimit = customer?.credit_limit || 0;
+    const newDebt = customerDebt + total;
+    const exceedsLimit = creditLimit > 0 && newDebt > creditLimit;
+    const availableCredit = Math.max(0, creditLimit - customerDebt);
 
     const isDigitalWallet = selectedMethod === 'yape' || selectedMethod === 'plin';
     const isCard = selectedMethod === 'card';
@@ -31,17 +40,21 @@ export default function PaymentModal({ isOpen, onClose, total, onConfirm, submit
         : 0;
 
     const handleConfirm = () => {
-        if (isDigitalWallet && !transactionId.trim()) {
+        if (isFiado && exceedsLimit) {
+            setError(`🚫 Excede el límite de crédito. Disponible: ${formatCurrency(availableCredit)}`);
+            return;
+        }
+        if (!isFiado && isDigitalWallet && !transactionId.trim()) {
             setError('Ingresa el número de operación');
             return;
         }
-        if (isCard && !transactionId.trim()) {
+        if (!isFiado && isCard && !transactionId.trim()) {
             setError('Ingresa el número de voucher');
             return;
         }
         setError('');
         onConfirm({
-            paymentMethod: selectedMethod,
+            paymentMethod: isFiado ? 'credit' : selectedMethod,
             transactionId: transactionId.trim() || null,
         });
     };
@@ -50,6 +63,7 @@ export default function PaymentModal({ isOpen, onClose, total, onConfirm, submit
         setSelectedMethod(method);
         setTransactionId('');
         setCashReceived('');
+        setIsFiado(false);
         setError('');
     };
 
@@ -121,6 +135,56 @@ export default function PaymentModal({ isOpen, onClose, total, onConfirm, submit
                             </button>
                         ))}
                     </div>
+
+                    {/* === FIADO / CRÉDITO TOGGLE === */}
+                    {customer && creditLimit > 0 && (
+                        <div className="animate-fade-in">
+                            <button
+                                onClick={() => { setIsFiado(!isFiado); setError(''); }}
+                                className={`w-full p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-3
+                                    ${isFiado
+                                        ? 'bg-amber-500/10 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                                        : 'bg-surface-800/50 border-surface-700/30 hover:border-surface-600'
+                                    }`}
+                            >
+                                <div className={`w-12 h-7 rounded-full relative transition-all duration-200 flex-shrink-0
+                                    ${isFiado ? 'bg-amber-500' : 'bg-surface-600'}`}
+                                >
+                                    <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-200
+                                        ${isFiado ? 'left-[calc(100%-26px)]' : 'left-0.5'}`}
+                                    />
+                                </div>
+                                <div className="text-left flex-1">
+                                    <p className={`text-sm font-bold ${isFiado ? 'text-amber-400' : 'text-surface-300'}`}>
+                                        📌 Venta al Fiado
+                                    </p>
+                                    <p className="text-[11px] text-surface-500">
+                                        Disponible: {formatCurrency(availableCredit)} de {formatCurrency(creditLimit)}
+                                    </p>
+                                </div>
+                            </button>
+
+                            {isFiado && (
+                                <div className="mt-3 space-y-3 animate-fade-in">
+                                    <CreditIndicator customer={customer} />
+                                    {exceedsLimit && (
+                                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-2">
+                                            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="text-xs font-semibold text-red-400">🚫 Límite de crédito excedido</p>
+                                                <p className="text-[11px] text-red-400/80 mt-0.5">
+                                                    Deuda actual: {formatCurrency(customerDebt)} + Esta venta: {formatCurrency(total)} = {formatCurrency(newDebt)}
+                                                </p>
+                                                <p className="text-[11px] text-red-400/80">
+                                                    Límite: {formatCurrency(creditLimit)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* === EFECTIVO === */}
                     {isCash && (
@@ -246,16 +310,21 @@ export default function PaymentModal({ isOpen, onClose, total, onConfirm, submit
 
                 {/* Footer — Confirm Button */}
                 <div className="sticky bottom-0 bg-surface-900/95 backdrop-blur-xl px-6 py-4 border-t border-surface-700/50">
+                    {error && (
+                        <p className="text-xs text-red-400 text-center mb-2 animate-fade-in">{error}</p>
+                    )}
                     <button
                         onClick={handleConfirm}
-                        disabled={submitting}
+                        disabled={submitting || (isFiado && exceedsLimit)}
                         className={`w-full py-4 rounded-xl text-base font-bold transition-all duration-200 
                                     flex items-center justify-center gap-2 active:scale-[0.98]
-                                    ${selectedMethod === 'yape'
-                                ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-lg shadow-purple-500/25'
-                                : selectedMethod === 'plin'
-                                    ? 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white shadow-lg shadow-teal-500/25'
-                                    : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-lg shadow-primary-500/25'
+                                    ${isFiado
+                                ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-lg shadow-amber-500/25'
+                                : selectedMethod === 'yape'
+                                    ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-lg shadow-purple-500/25'
+                                    : selectedMethod === 'plin'
+                                        ? 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white shadow-lg shadow-teal-500/25'
+                                        : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-lg shadow-primary-500/25'
                             }
                                     disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
@@ -264,9 +333,11 @@ export default function PaymentModal({ isOpen, onClose, total, onConfirm, submit
                         ) : (
                             <>
                                 <CheckCircle className="w-5 h-5" />
-                                {isDigitalWallet
-                                    ? `Validar Pago ${walletLabel}`
-                                    : `Confirmar Cobro — ${formatCurrency(total)}`
+                                {isFiado
+                                    ? `📌 Registrar Fiado — ${formatCurrency(total)}`
+                                    : isDigitalWallet
+                                        ? `Validar Pago ${walletLabel}`
+                                        : `Confirmar Cobro — ${formatCurrency(total)}`
                                 }
                             </>
                         )}

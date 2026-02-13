@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import WhatsAppButton from '@/components/ui/WhatsAppButton';
 import PaymentModal from '@/components/ui/PaymentModal';
+import CreditIndicator from '@/components/ui/CreditIndicator';
 
 export default function NewInvoicePage() {
     const router = useRouter();
@@ -242,14 +243,20 @@ export default function NewInvoicePage() {
                             <User className="w-3.5 h-3.5 inline mr-1" /> Cliente
                         </label>
                         {selectedCustomer ? (
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-primary-500/10 border border-primary-500/20">
-                                <div>
-                                    <p className="font-medium text-surface-200">{selectedCustomer.name}</p>
-                                    <p className="text-xs text-surface-500">{selectedCustomer.email || 'Sin email'} · Saldo: {formatCurrency(selectedCustomer.balance)}</p>
+                            <div className="p-3 rounded-xl bg-primary-500/10 border border-primary-500/20 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium text-surface-200">{selectedCustomer.name}</p>
+                                        <p className="text-xs text-surface-500">{selectedCustomer.email || 'Sin email'}</p>
+                                    </div>
+                                    <button onClick={() => setSelectedCustomer(null)} className="btn-ghost text-xs p-1">
+                                        <X className="w-4 h-4" /> Cambiar
+                                    </button>
                                 </div>
-                                <button onClick={() => setSelectedCustomer(null)} className="btn-ghost text-xs p-1">
-                                    <X className="w-4 h-4" /> Cambiar
-                                </button>
+                                {/* Credit indicator */}
+                                {selectedCustomer.credit_limit > 0 && (
+                                    <CreditIndicator customer={selectedCustomer} compact />
+                                )}
                             </div>
                         ) : (
                             <div>
@@ -418,6 +425,7 @@ export default function NewInvoicePage() {
                 total={total}
                 onConfirm={handleSubmit}
                 submitting={submitting}
+                customer={selectedCustomer}
             />
         </div>
     );
