@@ -11,6 +11,7 @@ import {
     User, AlertCircle, CheckCircle, X
 } from 'lucide-react';
 import WhatsAppButton from '@/components/ui/WhatsAppButton';
+import PaymentModal from '@/components/ui/PaymentModal';
 
 export default function NewInvoicePage() {
     const router = useRouter();
@@ -29,6 +30,7 @@ export default function NewInvoicePage() {
     const [cart, setCart] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [notes, setNotes] = useState('');
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     useEffect(() => {
         Promise.all([
@@ -41,12 +43,12 @@ export default function NewInvoicePage() {
             .finally(() => setLoading(false));
     }, []);
 
-    // Keyboard shortcut: F9 to submit
+    // Keyboard shortcut: F9 to open payment modal
     useEffect(() => {
         const handler = (e) => {
-            if (e.key === 'F9') {
+            if (e.key === 'F9' && cart.length > 0 && selectedCustomer) {
                 e.preventDefault();
-                handleSubmit();
+                setShowPaymentModal(true);
             }
         };
         window.addEventListener('keydown', handler);
@@ -106,7 +108,8 @@ export default function NewInvoicePage() {
     const taxAmount = Math.round(subtotal * TAX_RATE * 100) / 100;
     const total = subtotal + taxAmount;
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (paymentData = {}) => {
+        const method = paymentData.paymentMethod || paymentMethod;
         if (!selectedCustomer) {
             setError('Debe seleccionar un cliente');
             setTimeout(() => setError(null), 3000);
@@ -119,7 +122,7 @@ export default function NewInvoicePage() {
         }
 
         // Credit limit check
-        if (paymentMethod === 'credit') {
+        if (method === 'credit') {
             const newBalance = (selectedCustomer.balance || 0) + total;
             if (selectedCustomer.credit_limit > 0 && newBalance > selectedCustomer.credit_limit) {
                 setError(`Excede el límite de crédito. Límite: ${formatCurrency(selectedCustomer.credit_limit)}, Saldo actual: ${formatCurrency(selectedCustomer.balance)}`);
@@ -132,14 +135,19 @@ export default function NewInvoicePage() {
         setError(null);
 
         try {
+            const invoiceNotes = [
+                notes,
+                paymentData.transactionId ? `Ref: ${paymentData.transactionId}` : '',
+            ].filter(Boolean).join(' | ');
+
             const res = await fetch('/api/invoices', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     customer_id: selectedCustomer.id,
-                    payment_method: paymentMethod,
+                    payment_method: method,
                     tax_rate: TAX_RATE,
-                    notes,
+                    notes: invoiceNotes,
                     items: cart.map(item => ({
                         product_id: item.product_id,
                         quantity: item.quantity,
@@ -155,6 +163,7 @@ export default function NewInvoicePage() {
                 return;
             }
 
+            setShowPaymentModal(false);
             setLastInvoice({
                 id: data.invoice_id,
                 invoiceNumber: data.invoice_number || `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-???`,
@@ -377,27 +386,6 @@ export default function NewInvoicePage() {
                             </div>
                         </div>
 
-                        {/* Payment Method */}
-                        <div className="mt-4">
-                            <label className="text-xs font-semibold text-surface-400 uppercase mb-2 block">
-                                <CreditCard className="w-3.5 h-3.5 inline mr-1" /> Método de Pago
-                            </label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {PAYMENT_METHODS.map(pm => (
-                                    <button
-                                        key={pm.value}
-                                        onClick={() => setPaymentMethod(pm.value)}
-                                        className={`py-2 px-3 rounded-xl text-xs font-medium transition-all ${paymentMethod === pm.value
-                                            ? 'bg-primary-500/20 border border-primary-500/40 text-primary-400'
-                                            : 'bg-surface-800 border border-surface-700 text-surface-400 hover:border-surface-600'
-                                            }`}
-                                    >
-                                        {pm.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
                         {/* Notes */}
                         <div className="mt-3">
                             <input
@@ -409,25 +397,28 @@ export default function NewInvoicePage() {
                             />
                         </div>
 
-                        {/* Submit */}
+                        {/* Submit — Opens Payment Modal */}
                         <button
-                            onClick={handleSubmit}
+                            onClick={() => setShowPaymentModal(true)}
                             disabled={submitting || cart.length === 0 || !selectedCustomer}
                             className="btn-primary w-full mt-4 py-3 text-base"
                         >
-                            {submitting ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                                <>
-                                    <ShoppingCart className="w-5 h-5" />
-                                    Facturar — {formatCurrency(total)}
-                                </>
-                            )}
+                            <ShoppingCart className="w-5 h-5" />
+                            Cobrar — {formatCurrency(total)}
                         </button>
-                        <p className="text-[10px] text-surface-600 text-center mt-2">Presiona F9 para facturar rápidamente</p>
+                        <p className="text-[10px] text-surface-600 text-center mt-2">Presiona F9 para cobrar rápidamente</p>
                     </div>
                 </div>
             </div>
+
+            {/* Payment Modal */}
+            <PaymentModal
+                isOpen={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                total={total}
+                onConfirm={handleSubmit}
+                submitting={submitting}
+            />
         </div>
     );
 }

@@ -4,9 +4,11 @@ export const DEFAULT_COUNTRY_CODE = '51'; // Peru
 export const TAX_RATE = 0.16;
 
 export const PAYMENT_METHODS = [
-    { value: 'cash', label: 'Efectivo' },
-    { value: 'credit', label: 'Crédito' },
-    { value: 'transfer', label: 'Transferencia' },
+    { value: 'cash', label: 'Efectivo', icon: '💵' },
+    { value: 'yape', label: 'Yape', icon: '📱' },
+    { value: 'plin', label: 'Plin', icon: '📲' },
+    { value: 'card', label: 'Tarjeta', icon: '💳' },
+    { value: 'transfer', label: 'Transferencia', icon: '🏦' },
 ];
 
 export const CUSTOMER_TYPES = [
