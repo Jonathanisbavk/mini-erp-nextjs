@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { LoadingSpinner, StatusBadge } from '@/components/ui/SharedComponents';
 import { formatCurrency, formatDate, getInvoiceStatus, getPaymentMethodLabel } from '@/lib/utils';
-import { ArrowLeft, Printer, FileText, User, Package, DollarSign } from 'lucide-react';
+import { ArrowLeft, Printer, FileText, User, Package, DollarSign, Receipt } from 'lucide-react';
 import WhatsAppButton from '@/components/ui/WhatsAppButton';
+import ThermalReceipt from '@/components/ui/ThermalReceipt';
 
 export default function InvoiceDetailPage() {
     const { id } = useParams();
@@ -45,8 +46,8 @@ export default function InvoiceDetailPage() {
                             invoiceNumber={invoice.invoice_number}
                             size="sm"
                         />
-                        <button onClick={() => window.print()} className="btn-secondary text-sm">
-                            <Printer className="w-4 h-4" /> Imprimir
+                        <button onClick={() => window.print()} className="btn-primary text-sm">
+                            <Receipt className="w-4 h-4" /> Imprimir Ticket
                         </button>
                     </div>
                 </div>
@@ -157,6 +158,9 @@ export default function InvoiceDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* Hidden Thermal Receipt — only visible when printing */}
+            <ThermalReceipt invoice={invoice} />
         </div>
     );
 }
